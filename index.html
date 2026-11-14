@@ -1459,6 +1459,37 @@
             ]
         };
 
+        const LOCAL_CONFIG_KEY = 'phapa_school_config_v1';
+        const LOCAL_ORDERS_KEY = 'phapa_school_orders_v1';
+
+        function loadFromLocalStorage() {
+            try {
+                const savedCfg = localStorage.getItem(LOCAL_CONFIG_KEY);
+                if (savedCfg) {
+                    const parsed = JSON.parse(savedCfg);
+                    appConfig = { ...DEFAULT_CONFIG, ...parsed };
+                }
+                const savedOrders = localStorage.getItem(LOCAL_ORDERS_KEY);
+                if (savedOrders) {
+                    const parsedOrders = JSON.parse(savedOrders);
+                    if (Array.isArray(parsedOrders)) {
+                        orders = parsedOrders;
+                    }
+                }
+            } catch (e) {
+                console.warn('LocalStorage load warning:', e);
+            }
+        }
+
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem(LOCAL_CONFIG_KEY, JSON.stringify(appConfig));
+                localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(orders));
+            } catch (e) {
+                console.warn('LocalStorage save warning:', e);
+            }
+        }
+
         let appConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
         let lastDatabaseSyncTime = "-";
         let isCloudConnected = false;
@@ -1636,8 +1667,15 @@
                 // ตรวจสอบข้อมูลตั้งค่าเริ่มต้นจากฐานข้อมูลก่อน
                 const initialConfigSnap = await getDoc(configDocRef);
                 if (initialConfigSnap.exists()) {
-                    appConfig = { ...DEFAULT_CONFIG, ...initialConfigSnap.data() };
-                    applyConfigToUI();
+                    const cloudData = initialConfigSnap.data();
+                    // ถ้าระบบในเครื่องเพิ่งแก้ไขล่าสุด ให้ใช้ข้อมูลที่ใหม่กว่า
+                    if (!appConfig.updatedAt || (cloudData.updatedAt && cloudData.updatedAt >= appConfig.updatedAt)) {
+                        appConfig = { ...DEFAULT_CONFIG, ...cloudData };
+                        saveToLocalStorage();
+                        applyConfigToUI();
+                    } else {
+                        await setDoc(configDocRef, appConfig);
+                    }
                 } else {
                     await setDoc(configDocRef, appConfig);
                 }
@@ -1657,13 +1695,19 @@
             // เปิดฟังการเปลี่ยนแปลงการตั้งค่าโรงเรียนแบบเรียลไทม์
             onSnapshot(configDocRef, (snap) => {
                 if (snap.exists()) {
-                    appConfig = { ...DEFAULT_CONFIG, ...snap.data() };
-                    applyConfigToUI();
+                    const cloudData = snap.data();
+                    if (!appConfig.updatedAt || !cloudData.updatedAt || cloudData.updatedAt >= appConfig.updatedAt) {
+                        appConfig = { ...DEFAULT_CONFIG, ...cloudData };
+                        saveToLocalStorage();
+                        // อัปเดตฟอร์มตั้งค่าเฉพาะเมื่อไม่ได้กำลังพิมพ์แก้ไขอยู่ในหน้าตั้งค่า
+                        const isEditingSettings = !document.getElementById('view-settings').classList.contains('hidden');
+                        applyConfigToUI(!isEditingSettings);
+                    }
                     updateCloudStatusIndicator('online', 'ฐานข้อมูลออนไลน์');
                 }
             }, (err) => {
                 console.error("Config listener error:", err);
-                updateCloudStatusIndicator('local', 'การเชื่อมต่อขัดข้อง');
+                updateCloudStatusIndicator('local', 'บันทึกในเครื่องแล้ว');
             });
 
             // เปิดฟังการเปลี่ยนแปลงรายการสั่งจองเสื้อแบบเรียลไทม์
@@ -1671,13 +1715,14 @@
                 const fetched = [];
                 snap.forEach(d => fetched.push(d.data()));
                 orders = fetched.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                saveToLocalStorage();
                 updateHeroLiveStats();
                 renderAdminDashboard();
                 renderBackofficeDashboard();
                 updateCloudStatusIndicator('online', 'ฐานข้อมูลออนไลน์');
             }, (err) => {
                 console.error("Orders listener error:", err);
-                updateCloudStatusIndicator('local', 'การเชื่อมต่อขัดข้อง');
+                updateCloudStatusIndicator('local', 'บันทึกในเครื่องแล้ว');
             });
         }
 
@@ -2058,7 +2103,7 @@ function deleteOrderRow(sheet, orderId) {
             document.getElementById('hero-live-donors').textContent = orders.length.toLocaleString();
         }
 
-        function applyConfigToUI() {
+        function applyConfigToUI(shouldPopulateSettings = true) {
             syncSelectionKeys();
 
             // 1. แสดงโลโก้โรงเรียนบน Navbar
@@ -2138,7 +2183,9 @@ function deleteOrderRow(sheet, orderId) {
             renderSizeChartModal();
             recalculateTotal();
             updateHeroLiveStats();
-            populateSettingsForm();
+            if (shouldPopulateSettings) {
+                populateSettingsForm();
+            }
             renderAdminDashboard();
             renderBackofficeDashboard();
         }
@@ -2345,6 +2392,7 @@ function deleteOrderRow(sheet, orderId) {
             document.getElementById('transferDate').value = today;
 
             orders.push(newOrder);
+            saveToLocalStorage();
             updateHeroLiveStats();
             renderAdminDashboard();
             renderBackofficeDashboard();
@@ -3144,7 +3192,9 @@ function deleteOrderRow(sheet, orderId) {
             }
 
             appConfig.demoCleared = true;
+            appConfig.updatedAt = Date.now();
             orders = orders.filter(o => !demoIds.includes(o.id));
+            saveToLocalStorage();
             updateHeroLiveStats();
             renderAdminDashboard();
             renderBackofficeDashboard();
@@ -3254,6 +3304,8 @@ function deleteOrderRow(sheet, orderId) {
         }
 
         async function persistConfigToCloud() {
+            appConfig.updatedAt = Date.now();
+            saveToLocalStorage();
             if (db && currentUser) {
                 try {
                     const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'schoolConfig');
@@ -3266,6 +3318,7 @@ function deleteOrderRow(sheet, orderId) {
 
         async function deleteOrder(orderId) {
             orders = orders.filter(o => o.id !== orderId);
+            saveToLocalStorage();
             updateHeroLiveStats();
             renderAdminDashboard();
             renderBackofficeDashboard();
@@ -3285,6 +3338,7 @@ function deleteOrderRow(sheet, orderId) {
         }
 
         async function syncSingleOrder(order) {
+            saveToLocalStorage();
             if (db && currentUser) {
                 try {
                     const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', order.id);
@@ -3381,7 +3435,8 @@ function deleteOrderRow(sheet, orderId) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const maxDim = key === 'schoolLogo' ? 320 : 720;
+                    // บีบอัดขนาดรูปให้พอดีและไม่เกินลิมิต 1MB ของฐานข้อมูล Cloud
+                    const maxDim = key === 'schoolLogo' ? 240 : 520;
                     let w = img.width;
                     let h = img.height;
                     if (w > h && w > maxDim) {
@@ -3394,11 +3449,13 @@ function deleteOrderRow(sheet, orderId) {
                     canvas.width = w;
                     canvas.height = h;
                     const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, w, h);
                     ctx.drawImage(img, 0, 0, w, h);
-                    const dataUrl = canvas.toDataURL('image/png', 0.85);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
                     draftConfigImages[key] = dataUrl;
                     refreshSettingsImagePreviews();
-                    showToast('อัปโหลดรูปภาพแล้ว กรุณากดปุ่ม "บันทึกการตั้งค่าทั้งหมด" ด้านบนเพื่อใช้งาน');
+                    showToast('อัปโหลดรูปภาพแล้ว กรุณากดปุ่ม "บันทึกการตั้งค่าทั้งหมด" เพื่อยืนยัน');
                 };
                 img.src = evt.target.result;
             };
@@ -3443,7 +3500,6 @@ function deleteOrderRow(sheet, orderId) {
 
             document.getElementById('cfg-shippingFirst').value = appConfig.shippingFirst;
             document.getElementById('cfg-shippingNext').value = appConfig.shippingNext;
-
             document.getElementById('cfg-promptPayId').value = appConfig.promptPayId || '';
             document.getElementById('cfg-bankName').value = appConfig.bankName;
             document.getElementById('cfg-bankNo').value = appConfig.bankNo;
@@ -3462,16 +3518,16 @@ function deleteOrderRow(sheet, orderId) {
             const list = getActiveStaffList();
             tbody.innerHTML = list.map((st, idx) => `
                 <tr class="cfg-staff-row">
-                    <td class="p-2"><input type="text" value="${st.name}" class="cfg-st-name w-full px-2 py-1.5 rounded-lg border border-slate-200 font-semibold"></td>
-                    <td class="p-2"><input type="text" value="${st.username}" class="cfg-st-user w-28 px-2 py-1.5 rounded-lg border border-slate-200 font-mono font-bold text-indigo-700"></td>
-                    <td class="p-2"><input type="text" value="${st.password}" class="cfg-st-pass w-24 px-2 py-1.5 rounded-lg border border-slate-200 font-mono"></td>
-                    <td class="p-2">
-                        <select class="cfg-st-role px-2 py-1.5 rounded-lg border border-slate-200 bg-white font-semibold">
-                            <option value="admin" ${st.role === 'admin' ? 'selected' : ''}>แอดมิน (ตั้งค่าระบบได้)</option>
-                            <option value="staff" ${st.role !== 'admin' ? 'selected' : ''}>เจ้าหน้าที่จัดการออเดอร์</option>
+                    <td class="p-1.5"><input type="text" value="${st.name}" class="cfg-st-name w-full px-2 py-1 rounded-lg border border-slate-200 font-semibold text-slate-800"></td>
+                    <td class="p-1.5"><input type="text" value="${st.username}" class="cfg-st-user w-24 px-2 py-1 rounded-lg border border-slate-200 font-mono text-indigo-700 font-bold"></td>
+                    <td class="p-1.5"><input type="text" value="${st.password}" class="cfg-st-pass w-20 px-2 py-1 rounded-lg border border-slate-200 font-mono"></td>
+                    <td class="p-1.5">
+                        <select class="cfg-st-role px-2 py-1 rounded-lg border border-slate-200 bg-white font-semibold">
+                            <option value="admin" ${st.role === 'admin' ? 'selected' : ''}>แอดมิน</option>
+                            <option value="staff" ${st.role !== 'admin' ? 'selected' : ''}>เจ้าหน้าที่</option>
                         </select>
                     </td>
-                    <td class="p-2 text-center">
+                    <td class="p-1.5 text-center">
                         <button type="button" onclick="removeStaffRowInSettings(${idx})" class="text-rose-500 hover:text-rose-700 p-1">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
@@ -3480,7 +3536,26 @@ function deleteOrderRow(sheet, orderId) {
             `).join('');
         }
 
+        function syncDOMStaffRowsToConfig() {
+            const staffRows = document.querySelectorAll('.cfg-staff-row');
+            if (staffRows.length === 0) return;
+            const current = [];
+            staffRows.forEach(row => {
+                const name = row.querySelector('.cfg-st-name')?.value.trim() || '';
+                const username = row.querySelector('.cfg-st-user')?.value.trim() || '';
+                const password = row.querySelector('.cfg-st-pass')?.value.trim() || '';
+                const role = row.querySelector('.cfg-st-role')?.value || 'staff';
+                if (username || name) {
+                    current.push({ name: name || username, username: username || 'staff', password: password || '1234', role });
+                }
+            });
+            if (current.length > 0) {
+                appConfig.staffAccounts = current;
+            }
+        }
+
         function addStaffRowInSettings() {
+            syncDOMStaffRowsToConfig();
             const list = getActiveStaffList();
             list.push({ name: "เจ้าหน้าที่ใหม่", username: `staff${list.length + 1}`, password: "1234", role: "staff" });
             appConfig.staffAccounts = list;
@@ -3488,6 +3563,7 @@ function deleteOrderRow(sheet, orderId) {
         }
 
         function removeStaffRowInSettings(idx) {
+            syncDOMStaffRowsToConfig();
             const list = getActiveStaffList();
             if (list.length <= 1) {
                 showToast('ต้องมีบัญชีผู้ดูแลระบบอย่างน้อย 1 บัญชีครับ', 'error');
@@ -3496,6 +3572,21 @@ function deleteOrderRow(sheet, orderId) {
             list.splice(idx, 1);
             appConfig.staffAccounts = list;
             renderSettingsStaffRows();
+        }
+
+        function syncDOMSizeRowsToConfig() {
+            const sizeRows = document.querySelectorAll('.cfg-size-row');
+            if (sizeRows.length === 0) return;
+            const current = [];
+            sizeRows.forEach(row => {
+                const code = row.querySelector('.cfg-size-code')?.value.trim() || '';
+                const chest = row.querySelector('.cfg-size-chest')?.value.trim() || '';
+                const length = row.querySelector('.cfg-size-length')?.value.trim() || '';
+                if (code) current.push({ code, chest, length });
+            });
+            if (current.length > 0) {
+                appConfig.sizes = current;
+            }
         }
 
         function renderSettingsSizeRows() {
@@ -3515,11 +3606,13 @@ function deleteOrderRow(sheet, orderId) {
         }
 
         function addSizeRow() {
+            syncDOMSizeRowsToConfig();
             appConfig.sizes.push({ code: "4XL", chest: "50", length: "32" });
             renderSettingsSizeRows();
         }
 
         function removeSizeRow(index) {
+            syncDOMSizeRowsToConfig();
             if (appConfig.sizes.length <= 1) {
                 showToast('ต้องมีขนาดเสื้ออย่างน้อย 1 ขนาดครับ', 'error');
                 return;
@@ -3587,28 +3680,38 @@ function deleteOrderRow(sheet, orderId) {
                 adminUser: updatedStaff[0].username,
                 adminPass: updatedStaff[0].password,
                 demoCleared: Boolean(appConfig.demoCleared),
-                staffAccounts: updatedStaff
+                staffAccounts: updatedStaff,
+                updatedAt: Date.now()
             };
 
-            applyConfigToUI();
+            // 1. บันทึกลงหน่วยความจำเครื่องทันที (ป้องกันข้อมูลหายเมื่อรีเฟรชหน้าเว็บ)
+            saveToLocalStorage();
 
+            // 2. อัปเดตหน้าเว็บทั้งหมดทันที
+            applyConfigToUI(true);
+
+            // 3. บันทึกขึ้นฐานข้อมูล Cloud (ถ้าเชื่อมต่ออยู่)
             if (db && currentUser) {
                 try {
                     updateCloudStatusIndicator('syncing', 'กำลังบันทึกการตั้งค่า...');
                     const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'schoolConfig');
                     await setDoc(configDocRef, appConfig);
-                    updateCloudStatusIndicator('online', 'ฐานข้อมูลออนไลน์');
+                    updateCloudStatusIndicator('online', 'บันทึกฐานข้อมูลสำเร็จ');
                 } catch (e) {
                     console.error("Save settings error:", e);
+                    updateCloudStatusIndicator('local', 'บันทึกในเครื่องแล้ว');
                 }
             }
 
-            showToast('บันทึกการตั้งค่าระบบลงฐานข้อมูลและอัปเดต QR Code เรียบร้อยแล้ว!');
+            showToast('บันทึกการตั้งค่าระบบเรียบร้อยแล้ว! ข้อมูลถูกจำไว้ถาวรแล้วครับ');
         }
 
         async function resetDefaultSettings() {
             appConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
-            applyConfigToUI();
+            appConfig.updatedAt = Date.now();
+            localStorage.removeItem(LOCAL_CONFIG_KEY);
+            saveToLocalStorage();
+            applyConfigToUI(true);
             if (db && currentUser) {
                 const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'schoolConfig');
                 await setDoc(configDocRef, appConfig).catch(console.error);
@@ -3871,7 +3974,8 @@ function deleteOrderRow(sheet, orderId) {
         window.addEventListener('DOMContentLoaded', () => {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('transferDate').value = today;
-            applyConfigToUI();
+            loadFromLocalStorage();
+            applyConfigToUI(true);
             initFirebase();
         });
     </script>
