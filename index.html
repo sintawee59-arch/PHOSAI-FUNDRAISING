@@ -287,8 +287,8 @@
 
                         <div class="space-y-3.5">
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อ-นามสกุล ผู้จอง / ชื่อสำหรับออกใบอนุโมทนาบัตร <span class="text-rose-500">*</span></label>
-                                <input type="text" id="customerName" required placeholder="เช่น คุณสมชาย ใจดี (ศิษย์เก่า รุ่น 15)"
+                                <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อ-นามสกุล ผู้สั่งจอง <span class="text-rose-500">*</span></label>
+                                <input type="text" id="customerName" required placeholder="เช่น คุณสมชาย ใจดี"
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-hidden focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
                             </div>
 
@@ -336,11 +336,11 @@
 
                         <!-- ระบบสแกน QR Code จ่ายเงิน (Dynamic PromptPay QR & โอนบัญชีธนาคาร) -->
                         <div class="bg-sky-50/70 rounded-2xl p-4 border border-sky-200/80 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-sky-900 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-qrcode text-sky-600"></i> สแกน QR Code ชำระเงิน
+                            <div class="flex items-center justify-between gap-2">
+                                <span id="payment-section-title" class="text-xs font-bold text-sky-900 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-qrcode text-sky-600"></i> ช่องทางชำระเงิน
                                 </span>
-                                <div class="inline-flex rounded-lg bg-white p-0.5 border border-sky-200 text-[11px] font-semibold">
+                                <div id="payment-method-toggle-group" class="inline-flex rounded-lg bg-white p-0.5 border border-sky-200 text-[11px] font-semibold">
                                     <button type="button" id="paytab-qr" onclick="switchPaymentMethodTab('qr')" class="px-2.5 py-1 rounded-md bg-sky-600 text-white transition">สแกน QR</button>
                                     <button type="button" id="paytab-bank" onclick="switchPaymentMethodTab('bank')" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-sky-600 transition">เลขบัญชี</button>
                                 </div>
@@ -601,6 +601,9 @@
                     <button onclick="openStaffManagerModal()" id="btn-open-staff-modal" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5">
                         <i class="fa-solid fa-users-gear text-indigo-600"></i> จัดการเจ้าหน้าที่ (<span id="staff-count-badge">1</span>)
                     </button>
+                    <button onclick="openDatabaseExplorerModal()" class="bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-database text-cyan-600"></i> ดูตารางฐานข้อมูลทั้งหมด (6 ตาราง)
+                    </button>
                     <button onclick="clearDemoOrdersForProduction()" class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5" title="ล้างรายการตัวอย่างเพื่อเริ่มรับออเดอร์จริง">
                         <i class="fa-solid fa-broom text-amber-600"></i> เริ่มใช้งานจริง (ล้างข้อมูลตัวอย่าง)
                     </button>
@@ -712,19 +715,22 @@
                         <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
                             <i class="fa-solid fa-sliders text-sky-600"></i> ตั้งค่าระบบสั่งจองเสื้อผ้าป่าโรงเรียน
                         </h2>
-                        <p class="text-xs sm:text-sm text-slate-500">ปรับแต่งข้อมูลโรงเรียน ราคาเสื้อ ขนาดเสื้อ อัตราค่าจัดส่ง และเลขพร้อมเพย์สำหรับสร้าง QR Code</p>
+                        <p class="text-xs sm:text-sm text-slate-500">ปรับแต่งข้อมูลโรงเรียน ราคาเสื้อ ขนาดเสื้อ อัตราค่าจัดส่ง และเลขพร้อมเพย์ (ระบบบันทึกให้อัตโนมัติทันทีที่แก้ไข)</p>
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span id="autosave-indicator" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+                            <i class="fa-solid fa-bolt text-emerald-500"></i> บันทึกอัตโนมัติทำงานอยู่
+                        </span>
                         <button type="button" onclick="resetDefaultSettings()" class="px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-xs font-semibold text-slate-700 transition">
                             <i class="fa-solid fa-rotate-left mr-1"></i> คืนค่าเริ่มต้น
                         </button>
-                        <button type="button" onclick="saveSystemSettings()" class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-md shadow-sky-600/20 transition flex items-center gap-1.5">
+                        <button type="button" onclick="saveSystemSettings(false)" class="btn-save-settings px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-md shadow-sky-600/20 transition flex items-center gap-1.5 cursor-pointer">
                             <i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่าทั้งหมด
                         </button>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div id="settings-form-container" oninput="triggerSettingsAutoSave()" onchange="triggerSettingsAutoSave()" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- 1. ตั้งค่าข้อมูลโรงเรียน & โลโก้โรงเรียน -->
                     <div class="bg-sky-50/50 rounded-2xl p-5 border border-sky-100 space-y-4">
                         <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
@@ -875,6 +881,29 @@
                         <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
                             <div class="text-xs font-bold text-sky-700">ข้อมูล QR Code ทางการเงินของโรงเรียน & บัญชีธนาคาร</div>
 
+                            <!-- สวิตช์ เปิด-ปิด ช่องทางการชำระเงิน -->
+                            <div class="bg-sky-50/80 p-3.5 rounded-xl border border-sky-200 space-y-2">
+                                <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-toggle-on text-sky-600"></i> เปิด-ปิด ช่องทางชำระเงินที่ต้องการแสดงหน้าเว็บ
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                                    <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-sky-200 cursor-pointer hover:bg-sky-50/50 transition">
+                                        <input type="checkbox" id="cfg-enableQrPayment" checked class="w-4 h-4 accent-sky-600 rounded">
+                                        <div>
+                                            <div class="text-xs font-bold text-slate-800">เปิดใช้งานสแกน QR Code</div>
+                                            <div class="text-[10px] text-slate-500">แสดง QR Code ให้ผู้จองสแกนจ่าย</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-sky-200 cursor-pointer hover:bg-sky-50/50 transition">
+                                        <input type="checkbox" id="cfg-enableBankPayment" checked class="w-4 h-4 accent-sky-600 rounded">
+                                        <div>
+                                            <div class="text-xs font-bold text-slate-800">เปิดใช้งานโอนเลขบัญชีธนาคาร</div>
+                                            <div class="text-[10px] text-slate-500">แสดงเลขบัญชีพร้อมปุ่มคัดลอก</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
                             <!-- ช่องอัปโหลดรูป QR Code ทางการเงินของโรงเรียนโดยตรง -->
                             <div class="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-200 flex flex-col sm:flex-row items-center gap-3.5">
                                 <div class="w-20 h-20 rounded-xl bg-white border border-emerald-200 flex items-center justify-center overflow-hidden shrink-0 p-1">
@@ -984,8 +1013,11 @@
                             </div>
 
                             <div class="flex flex-wrap gap-2 pt-1 border-t border-slate-100">
+                                <button type="button" onclick="openDatabaseExplorerModal()" class="px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs">
+                                    <i class="fa-solid fa-database"></i> เปิดดูตารางฐานข้อมูลทั้งหมด (6 ตาราง)
+                                </button>
                                 <button type="button" onclick="forceSyncAllToCloud()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs">
-                                    <i class="fa-solid fa-cloud-arrow-up"></i> ซิงก์ Cloud ในระบบ
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> ซิงก์ทุกตารางขึ้น Cloud
                                 </button>
                                 <button type="button" onclick="downloadDatabaseBackup()" class="px-3 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-xs font-bold transition flex items-center gap-1.5">
                                     <i class="fa-solid fa-download"></i> สำรองฐานข้อมูล (.JSON)
@@ -997,6 +1029,17 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- แถบปุ่มบันทึกด้านล่างสุดของหน้าตั้งค่า เพื่อให้กดได้สะดวก -->
+                <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div class="text-xs text-slate-500 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                        <span>ข้อมูลทุกช่องจะถูกบันทึกอัตโนมัติทันทีที่แก้ไข หรือกดปุ่มบันทึกเพื่อซิงก์ขึ้นฐานข้อมูลทันที</span>
+                    </div>
+                    <button type="button" onclick="saveSystemSettings(false)" class="btn-save-settings w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-teal-600 hover:from-sky-500 hover:to-teal-500 text-white text-sm font-bold shadow-lg shadow-sky-600/20 transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่าทั้งหมดทันที
+                    </button>
                 </div>
             </div>
         </section>
@@ -1354,11 +1397,62 @@
                 </p>
             </div>
             <div class="flex gap-2 pt-1">
+                <button onclick="closeModal('dbStatusModal'); openDatabaseExplorerModal();" class="flex-1 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-table-list"></i> เปิดดูตารางฐานข้อมูลทั้งหมด
+                </button>
                 <button onclick="forceSyncAllToCloud()" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-arrows-rotate"></i> ซิงก์ฐานข้อมูลเดี๋ยวนี้
                 </button>
-                <button onclick="closeModal('dbStatusModal')" class="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-semibold text-xs">ปิด</button>
+                <button onclick="closeModal('dbStatusModal')" class="px-4 py-2.5 rounded-xl bg-slate-900 text-white font-semibold text-xs">ปิด</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL 11: ศูนย์จัดการและสำรวจตารางฐานข้อมูลทั้งหมด (Database Explorer Modal) ==================== -->
+    <div id="dbExplorerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-3xl max-w-6xl w-full p-6 shadow-2xl space-y-4 animate-fade-in max-h-[92vh] flex flex-col border border-sky-100">
+            <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3">
+                <div>
+                    <h3 class="font-bold text-base sm:text-lg text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-database text-sky-600"></i> โครงสร้างตารางฐานข้อมูลทั้งหมดของระบบ (Full Database Schema & Tables)
+                    </h3>
+                    <p class="text-xs text-slate-500">แสดงข้อมูลจริงในฐานข้อมูลทั้ง 6 ตาราง พร้อมส่งออกเป็นไฟล์ SQL, JSON, CSV หรือสร้าง 6 ชีตใน Google Sheets อัตโนมัติ</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="initializeAllDatabaseTables()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> สร้าง/ซิงก์ทุกตารางเข้าฐานข้อมูล
+                    </button>
+                    <button onclick="exportSQLDump()" class="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-code"></i> ดาวน์โหลด .SQL (ครบทุกตาราง)
+                    </button>
+                    <button onclick="closeModal('dbExplorerModal')" class="text-slate-400 hover:text-slate-600 px-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+            </div>
+
+            <!-- แถบเลือกดูแต่ละตาราง (6 Tables) -->
+            <div class="flex flex-wrap gap-1.5 bg-slate-100 p-1.5 rounded-2xl">
+                <button onclick="switchDbTableTab('orders')" id="dbtab-orders" class="px-3 py-2 rounded-xl text-xs font-bold bg-sky-600 text-white transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-receipt"></i> 1. Orders (ใบสั่งจอง) <span id="dbcount-orders" class="px-1.5 py-0.2 bg-white/20 rounded-full text-[10px]">0</span>
+                </button>
+                <button onclick="switchDbTableTab('order_items')" id="dbtab-order_items" class="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-sky-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-shirt"></i> 2. OrderItems (รายการเสื้อรายไซส์) <span id="dbcount-order_items" class="px-1.5 py-0.2 bg-slate-200 rounded-full text-[10px]">0</span>
+                </button>
+                <button onclick="switchDbTableTab('sizes')" id="dbtab-sizes" class="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-sky-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-ruler-combined"></i> 3. Sizes (ขนาดเสื้อ) <span id="dbcount-sizes" class="px-1.5 py-0.2 bg-slate-200 rounded-full text-[10px]">0</span>
+                </button>
+                <button onclick="switchDbTableTab('lineages')" id="dbtab-lineages" class="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-sky-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-users-rays"></i> 4. Lineages (สายบุญ) <span id="dbcount-lineages" class="px-1.5 py-0.2 bg-slate-200 rounded-full text-[10px]">0</span>
+                </button>
+                <button onclick="switchDbTableTab('staff')" id="dbtab-staff" class="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-sky-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-user-shield"></i> 5. Staff (เจ้าหน้าที่) <span id="dbcount-staff" class="px-1.5 py-0.2 bg-slate-200 rounded-full text-[10px]">0</span>
+                </button>
+                <button onclick="switchDbTableTab('settings')" id="dbtab-settings" class="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-sky-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-school"></i> 6. SchoolSettings & Logs <span id="dbcount-logs" class="px-1.5 py-0.2 bg-slate-200 rounded-full text-[10px]">0</span>
+                </button>
+            </div>
+
+            <!-- พื้นที่แสดงตารางข้อมูล -->
+            <div id="db-explorer-table-container" class="flex-1 overflow-auto border border-slate-200 rounded-2xl bg-slate-50/40 p-3"></div>
         </div>
     </div>
 
@@ -1444,6 +1538,8 @@
             ],
             shippingFirst: 40,
             shippingNext: 10,
+            enableQrPayment: true,
+            enableBankPayment: true,
             promptPayId: "099-999-9999",
             customQrImage: "",
             bankName: "ธ.กรุงไทย (บัญชีโรงเรียน)",
@@ -1461,6 +1557,32 @@
 
         const LOCAL_CONFIG_KEY = 'phapa_school_config_v1';
         const LOCAL_ORDERS_KEY = 'phapa_school_orders_v1';
+        const LOCAL_LOGS_KEY = 'phapa_school_audit_logs_v1';
+
+        let auditLogs = [
+            { id: 'LOG001', timestamp: '2026-10-20 14:30:00', actor: 'ระบบอัตโนมัติ', action: 'INIT_DB', detail: 'สร้างโครงสร้างตารางฐานข้อมูลเริ่มต้น 6 ตารางสำเร็จ' }
+        ];
+        let currentDbTab = 'orders';
+
+        function recordAuditLog(action, detail, actorName) {
+            const actor = actorName || (currentLoggedStaff ? currentLoggedStaff.name : 'ผู้ร่วมบุญ/หน้าเว็บ');
+            const newLog = {
+                id: 'LOG' + String(auditLogs.length + 1).padStart(3, '0'),
+                timestamp: new Date().toLocaleString('th-TH'),
+                actor,
+                action,
+                detail
+            };
+            auditLogs.unshift(newLog);
+            if (auditLogs.length > 100) auditLogs = auditLogs.slice(0, 100);
+            try {
+                localStorage.setItem(LOCAL_LOGS_KEY, JSON.stringify(auditLogs));
+            } catch (e) {}
+            if (db && currentUser) {
+                const logRef = doc(db, 'artifacts', appId, 'public', 'data', 'audit_logs', newLog.id);
+                setDoc(logRef, newLog).catch(() => {});
+            }
+        }
 
         function loadFromLocalStorage() {
             try {
@@ -1474,6 +1596,13 @@
                     const parsedOrders = JSON.parse(savedOrders);
                     if (Array.isArray(parsedOrders)) {
                         orders = parsedOrders;
+                    }
+                }
+                const savedLogs = localStorage.getItem(LOCAL_LOGS_KEY);
+                if (savedLogs) {
+                    const parsedLogs = JSON.parse(savedLogs);
+                    if (Array.isArray(parsedLogs)) {
+                        auditLogs = parsedLogs;
                     }
                 }
             } catch (e) {
@@ -1745,55 +1874,104 @@
 
         async function forceSyncAllToCloud() {
             if (!db || !currentUser) {
-                showToast('ไม่พบการเชื่อมต่อฐานข้อมูล Cloud ในสภาพแวดล้อมนี้', 'error');
+                showToast('บันทึกข้อมูลลงฐานข้อมูลในเครื่องเรียบร้อยแล้ว');
                 return;
             }
             try {
-                updateCloudStatusIndicator('syncing', 'กำลังซิงก์ข้อมูลทั้งหมด...');
+                updateCloudStatusIndicator('syncing', 'กำลังซิงก์ทุกตารางขึ้น Cloud...');
+                // 1. ตาราง SchoolSettings
                 const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'schoolConfig');
                 await setDoc(configDocRef, appConfig);
 
+                // 2. ตาราง Orders และ 3. ตาราง OrderItems
                 for (const o of orders) {
                     const oRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', o.id);
                     await setDoc(oRef, o);
+                    for (const item of (o.items || [])) {
+                        const itemId = `${o.id}_${item.size}`;
+                        const itemRef = doc(db, 'artifacts', appId, 'public', 'data', 'order_items', itemId);
+                        await setDoc(itemRef, {
+                            id: itemId,
+                            orderId: o.id,
+                            customerName: o.name,
+                            size: item.size,
+                            qty: Number(item.qty),
+                            unitPrice: Number(item.price),
+                            lineTotal: Number(item.qty) * Number(item.price),
+                            paymentStatus: o.paymentStatus
+                        });
+                    }
                 }
-                updateCloudStatusIndicator('online', 'ฐานข้อมูลออนไลน์');
-                document.getElementById('db-modal-lastsync').textContent = lastDatabaseSyncTime;
-                document.getElementById('db-modal-count').textContent = `${orders.length} รายการ`;
-                showToast(`ซิงก์ข้อมูลการตั้งค่าและรายการจอง (${orders.length} รายการ) ขึ้นฐานข้อมูลสำเร็จ!`);
+
+                // 4. ตาราง Sizes
+                for (const s of (appConfig.sizes || [])) {
+                    const sRef = doc(db, 'artifacts', appId, 'public', 'data', 'sizes', s.code);
+                    await setDoc(sRef, {
+                        code: s.code,
+                        chest: s.chest,
+                        length: s.length,
+                        price: Number(appConfig.shirtPrice)
+                    });
+                }
+
+                // 5. ตาราง Lineages (สายบุญ)
+                for (let i = 0; i < (appConfig.lineageGroups || []).length; i++) {
+                    const gName = appConfig.lineageGroups[i];
+                    const lId = 'LIN' + String(i + 1).padStart(2, '0');
+                    const lRef = doc(db, 'artifacts', appId, 'public', 'data', 'lineages', lId);
+                    await setDoc(lRef, { id: lId, name: gName });
+                }
+
+                // 6. ตาราง Staff (เจ้าหน้าที่หลังบ้าน)
+                const staffList = getActiveStaffList();
+                for (const st of staffList) {
+                    const stRef = doc(db, 'artifacts', appId, 'public', 'data', 'staff_accounts', st.username);
+                    await setDoc(stRef, st);
+                }
+
+                recordAuditLog('SYNC_ALL_TABLES', `ซิงก์ฐานข้อมูลครบทั้ง 6 ตาราง (${orders.length} ออเดอร์) ขึ้น Cloud สำเร็จ`);
+                updateCloudStatusIndicator('online', 'ฐานข้อมูลออนไลน์ (ครบ 6 ตาราง)');
+                if (document.getElementById('db-modal-lastsync')) {
+                    document.getElementById('db-modal-lastsync').textContent = lastDatabaseSyncTime;
+                    document.getElementById('db-modal-count').textContent = `${orders.length} รายการ (ครบ 6 ตาราง)`;
+                }
+                showToast(`สร้างและซิงก์ฐานข้อมูลครบทั้ง 6 ตารางสำเร็จ!`);
             } catch (err) {
                 console.error("Force sync error:", err);
                 showToast('เกิดข้อผิดพลาดในการซิงก์ฐานข้อมูล', 'error');
             }
         }
 
-        // ==================== 2.5 ระบบเชื่อมต่อ GOOGLE SHEETS เป็นฐานข้อมูล (Apps Script Webhook) ====================
+        // ==================== 2.5 ระบบเชื่อมต่อ GOOGLE SHEETS เป็นฐานข้อมูลครบทุกตาราง (6 Sheets) ====================
         const GOOGLE_APPS_SCRIPT_TEMPLATE = `// โค้ดสำหรับวางใน Google Sheets -> ส่วนขยาย -> Apps Script
+// สร้างตารางฐานข้อมูลครบทั้ง 6 แผ่นงาน (Sheets) ให้อัตโนมัติ:
+// 1. Orders  2. OrderItems  3. Sizes  4. Lineages  5. Staff  6. SchoolSettings
+// พร้อมระบบบันทึกรูปสลิปโอนเงินลงโฟลเดอร์ Google Drive อัตโนมัติ!
 function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.tryLock(10000);
   try {
     var payload = JSON.parse(e.postData.contents);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Orders') || ss.insertSheet('Orders');
+    ensureAllDatabaseSheets(ss);
 
-    // สร้างหัวตารางอัตโนมัติในแถวที่ 1
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow([
-        'รหัสจอง', 'ชื่อผู้ร่วมบุญ', 'เบอร์โทรศัพท์', 'สายบุญ', 'รายการเสื้อที่สั่งจอง',
-        'ค่าเสื้อรวม', 'ค่าจัดส่ง', 'ทำบุญเพิ่ม', 'ยอดโอนสุทธิ', 'การรับเสื้อ',
-        'ที่อยู่จัดส่ง', 'วันที่โอน', 'เวลาโอน', 'สถานะการเงิน', 'สถานะจัดส่ง',
-        'เลขพัสดุ', 'เวลาบันทึก', 'JSON_DATA'
-      ]);
-      sheet.getRange(1, 1, 1, 18).setFontWeight('bold').setBackground('#e0f2fe');
-    }
+    var ordersSheet = ss.getSheetByName('Orders');
+    var itemsSheet = ss.getSheetByName('OrderItems');
 
     if (payload.action === 'upsertOrder' && payload.order) {
-      upsertOrderRow(sheet, payload.order);
-    } else if (payload.action === 'syncAll' && Array.isArray(payload.orders)) {
-      payload.orders.forEach(function(o) { upsertOrderRow(sheet, o); });
+      upsertOrderRow(ordersSheet, payload.order);
+      rebuildOrderItemsSheet(itemsSheet, ordersSheet);
+    } else if (payload.action === 'syncAll') {
+      if (Array.isArray(payload.orders)) {
+        payload.orders.forEach(function(o) { upsertOrderRow(ordersSheet, o); });
+        rebuildOrderItemsSheet(itemsSheet, ordersSheet);
+      }
+      if (payload.config) {
+        syncMasterTables(ss, payload.config, payload.orders || []);
+      }
     } else if (payload.action === 'deleteOrder' && payload.orderId) {
-      deleteOrderRow(sheet, payload.orderId);
+      deleteOrderRow(ordersSheet, payload.orderId);
+      rebuildOrderItemsSheet(itemsSheet, ordersSheet);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ status: 'ok' }))
@@ -1806,15 +1984,138 @@ function doPost(e) {
   }
 }
 
+function ensureAllDatabaseSheets(ss) {
+  var schemas = {
+    'Orders': ['รหัสจอง', 'ชื่อผู้ร่วมบุญ', 'เบอร์โทรศัพท์', 'สายบุญ', 'รายการเสื้อที่สั่งจอง', 'ค่าเสื้อรวม', 'ค่าจัดส่ง', 'ทำบุญเพิ่ม', 'ยอดโอนสุทธิ', 'การรับเสื้อ', 'ที่อยู่จัดส่ง', 'วันที่โอน', 'เวลาโอน', 'สถานะการเงิน', 'สถานะจัดส่ง', 'เลขพัสดุ', 'ลิงก์รูปสลิป (Google Drive)', 'เวลาบันทึก', 'JSON_DATA'],
+    'OrderItems': ['รหัสรายการ', 'รหัสใบจอง (FK)', 'ชื่อผู้สั่งจอง', 'ขนาดเสื้อ (Size)', 'จำนวน (ตัว)', 'ราคาต่อตัว', 'รวมเป็นเงิน', 'สถานะการชำระเงิน'],
+    'Sizes': ['รหัสไซส์ (PK)', 'รอบอก (นิ้ว)', 'ความยาว (นิ้ว)', 'ราคาเสื้อ (บาท)'],
+    'Lineages': ['รหัสสายบุญ (PK)', 'ชื่อสายบุญ / กลุ่มผู้ร่วมบุญ', 'จำนวนผู้ร่วมบุญ (คน)', 'จำนวนเสื้อรวม (ตัว)', 'ยอดทำบุญสะสมรวม (บาท)'],
+    'Staff': ['Username (PK)', 'ชื่อ-นามสกุล เจ้าหน้าที่', 'รหัสผ่าน (PIN)', 'ระดับสิทธิ์ (Role)'],
+    'SchoolSettings': ['หัวข้อการตั้งค่า (Key)', 'ค่าที่ตั้งไว้ (Value)', 'อัปเดตล่าสุด']
+  };
+  Object.keys(schemas).forEach(function(sheetName) {
+    var sh = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
+    if (sh.getLastRow() === 0) {
+      var headers = schemas[sheetName];
+      sh.appendRow(headers);
+      sh.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#e0f2fe');
+    }
+  });
+}
+
+// ฟังก์ชันสร้างโฟลเดอร์และบันทึกรูปสลิป Base64 เป็นไฟล์รูปภาพใน Google Drive
+function saveSlipImageToDrive(base64DataUrl, orderId, customerName) {
+  try {
+    if (!base64DataUrl || base64DataUrl.indexOf('data:image') !== 0) {
+      return base64DataUrl || '-';
+    }
+    var folderName = 'Slip_Images_ผ้าป่า';
+    var folders = DriveApp.getFoldersByName(folderName);
+    var folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+
+    var parts = base64DataUrl.split(',');
+    var mimeMatch = parts[0].match(/:(.*?);/);
+    var mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    var byteCharacters = Utilities.base64Decode(parts[1]);
+    var safeName = String(customerName || '').replace(/[^a-zA-Z0-9ก-๙_-]/g, '_');
+    var fileName = 'Slip_' + orderId + '_' + safeName + '.jpg';
+
+    // ตรวจสอบว่ามีไฟล์เดิมของออเดอร์นี้หรือไม่ หากมีให้ใช้ไฟล์เดิมไม่ต้องสร้างซ้ำ
+    var existingFiles = folder.getFilesByName(fileName);
+    if (existingFiles.hasNext()) {
+      return existingFiles.next().getUrl();
+    }
+
+    var blob = Utilities.newBlob(byteCharacters, mimeType, fileName);
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return file.getUrl();
+  } catch (e) {
+    return 'บันทึกสลิปในระบบเว็บแล้ว (' + e.toString() + ')';
+  }
+}
+
+function syncMasterTables(ss, cfg, ordersList) {
+  // 1. Sizes Table
+  var sizeSheet = ss.getSheetByName('Sizes');
+  if (sizeSheet.getLastRow() > 1) sizeSheet.getRange(2, 1, sizeSheet.getLastRow() - 1, 4).clearContent();
+  (cfg.sizes || []).forEach(function(s) {
+    sizeSheet.appendRow([s.code, s.chest, s.length, cfg.shirtPrice || 299]);
+  });
+
+  // 2. Lineages Table
+  var linSheet = ss.getSheetByName('Lineages');
+  if (linSheet.getLastRow() > 1) linSheet.getRange(2, 1, linSheet.getLastRow() - 1, 5).clearContent();
+  (cfg.lineageGroups || []).forEach(function(g, idx) {
+    var matched = (ordersList || []).filter(function(o) { return o.group === g; });
+    var shirtCnt = 0;
+    var sumAmt = 0;
+    matched.forEach(function(o) {
+      sumAmt += Number(o.grandTotal || 0);
+      (o.items || []).forEach(function(i) { shirtCnt += Number(i.qty || 0); });
+    });
+    linSheet.appendRow(['LIN' + ('0' + (idx + 1)).slice(-2), g, matched.length, shirtCnt, sumAmt]);
+  });
+
+  // 3. Staff Table
+  var staffSheet = ss.getSheetByName('Staff');
+  if (staffSheet.getLastRow() > 1) staffSheet.getRange(2, 1, staffSheet.getLastRow() - 1, 4).clearContent();
+  (cfg.staffAccounts || []).forEach(function(st) {
+    staffSheet.appendRow([st.username, st.name, "'" + st.password, st.role]);
+  });
+
+  // 4. SchoolSettings Table
+  var setSheet = ss.getSheetByName('SchoolSettings');
+  if (setSheet.getLastRow() > 1) setSheet.getRange(2, 1, setSheet.getLastRow() - 1, 3).clearContent();
+  var nowStr = new Date().toLocaleString('th-TH');
+  var pairs = [
+    ['schoolName', cfg.schoolName],
+    ['eventTitle', cfg.eventTitle],
+    ['eventDate', cfg.eventDate],
+    ['contactPhone', cfg.contactPhone],
+    ['shirtName', cfg.shirtName],
+    ['shirtPrice', cfg.shirtPrice],
+    ['shippingFirst', cfg.shippingFirst],
+    ['shippingNext', cfg.shippingNext],
+    ['promptPayId', cfg.promptPayId],
+    ['bankName', cfg.bankName],
+    ['bankNo', cfg.bankNo],
+    ['bankOwner', cfg.bankOwner]
+  ];
+  pairs.forEach(function(p) { setSheet.appendRow([p[0], p[1], nowStr]); });
+}
+
+function rebuildOrderItemsSheet(itemsSheet, ordersSheet) {
+  if (itemsSheet.getLastRow() > 1) {
+    itemsSheet.getRange(2, 1, itemsSheet.getLastRow() - 1, 8).clearContent();
+  }
+  if (ordersSheet.getLastRow() <= 1) return;
+  var rows = ordersSheet.getRange(2, 1, ordersSheet.getLastRow() - 1, 19).getValues();
+  rows.forEach(function(r) {
+    var jsonCol = r[18] || r[17];
+    if (!jsonCol) return;
+    try {
+      var o = JSON.parse(jsonCol);
+      (o.items || []).forEach(function(it) {
+        itemsSheet.appendRow([
+          o.id + '_' + it.size, o.id, o.name, it.size,
+          Number(it.qty), Number(it.price), Number(it.qty) * Number(it.price), o.paymentStatus
+        ]);
+      });
+    } catch (ex) {}
+  });
+}
+
 function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('Orders');
   var orders = [];
   if (sheet && sheet.getLastRow() > 1) {
-    var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 18).getValues();
+    var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 19).getValues();
     rows.forEach(function(r) {
-      if (r[17]) {
-        try { orders.push(JSON.parse(r[17])); } catch (ex) {}
+      var jsonCol = r[18] || r[17];
+      if (jsonCol) {
+        try { orders.push(JSON.parse(jsonCol)); } catch (ex) {}
       }
     });
   }
@@ -1824,19 +2125,30 @@ function doGet(e) {
 
 function upsertOrderRow(sheet, o) {
   var itemsText = (o.items || []).map(function(i) { return 'ไซส์ ' + i.size + '(' + i.qty + ')'; }).join(', ');
+  var slipDriveUrl = '-';
+  if (o.slipDriveUrl) {
+    slipDriveUrl = o.slipDriveUrl;
+  } else if (o.slipImage && o.slipImage.indexOf('data:image') === 0) {
+    slipDriveUrl = saveSlipImageToDrive(o.slipImage, o.id, o.name);
+    o.slipDriveUrl = slipDriveUrl;
+  } else if (o.slipFile) {
+    slipDriveUrl = o.slipFile;
+  }
+
   var rowValues = [
     o.id, o.name, "'" + o.phone, o.group, itemsText,
     o.shirtTotal, o.shippingCost, o.extraDonation, o.grandTotal,
     o.deliveryType === 'shipping' ? 'จัดส่งพัสดุ' : 'รับที่โรงเรียน',
     o.address || '-', o.transferDate, o.transferTime,
     o.paymentStatus, o.shippingStatus, o.trackingNo || '',
+    slipDriveUrl,
     new Date().toLocaleString('th-TH'), JSON.stringify(o)
   ];
 
   var lastRow = sheet.getLastRow();
   for (var r = 2; r <= lastRow; r++) {
     if (String(sheet.getRange(r, 1).getValue()) === String(o.id)) {
-      sheet.getRange(r, 1, 1, 18).setValues([rowValues]);
+      sheet.getRange(r, 1, 1, 19).setValues([rowValues]);
       return;
     }
   }
@@ -1892,11 +2204,12 @@ function deleteOrderRow(sheet, orderId) {
                 openGoogleSheetGuideModal();
                 return;
             }
-            updateCloudStatusIndicator('syncing', 'กำลังส่งข้อมูลเข้า Google Sheet...');
-            const ok = await postToGoogleSheet({ action: 'syncAll', orders });
+            updateCloudStatusIndicator('syncing', 'กำลังสร้างและส่งข้อมูล 6 ตารางเข้า Google Sheet...');
+            const ok = await postToGoogleSheet({ action: 'syncAll', orders, config: appConfig });
             if (ok) {
-                updateCloudStatusIndicator('online', 'ซิงก์ Google Sheet แล้ว');
-                showToast(`ส่งข้อมูลทั้ง ${orders.length} รายการเข้า Google Sheet เรียบร้อยแล้ว!`);
+                recordAuditLog('GSHEET_SYNC', `ส่งข้อมูลทั้ง 6 ตาราง (${orders.length} ออเดอร์) ไปยัง Google Sheets`);
+                updateCloudStatusIndicator('online', 'ซิงก์ Google Sheet (6 ตาราง) แล้ว');
+                showToast(`สร้างและอัปเดตตารางทั้ง 6 แผ่นงานใน Google Sheet เรียบร้อยแล้ว!`);
             } else {
                 updateCloudStatusIndicator('local', 'ส่งเข้า Google Sheet ไม่สำเร็จ');
                 showToast('ไม่สามารถส่งข้อมูลไปยังลิงก์ Google Sheet ได้ กรุณาตรวจสอบ URL', 'error');
@@ -1934,9 +2247,20 @@ function deleteOrderRow(sheet, orderId) {
         }
 
         function downloadDatabaseBackup() {
+            const orderItems = getFlattenedOrderItems();
+            const lineagesTable = getLineageSummaryTable();
             const backupPayload = {
                 exportedAt: new Date().toISOString(),
                 appId,
+                tables: {
+                    SchoolSettings: appConfig,
+                    Orders: orders,
+                    OrderItems: orderItems,
+                    Sizes: appConfig.sizes,
+                    Lineages: lineagesTable,
+                    Staff: getActiveStaffList(),
+                    AuditLogs: auditLogs
+                },
                 schoolConfig: appConfig,
                 orders
             };
@@ -1945,11 +2269,375 @@ function deleteOrderRow(sheet, orderId) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `สำรองฐานข้อมูลเสื้อผ้าป่า_${appConfig.schoolName}_${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `ฐานข้อมูลครบทุกตาราง_${appConfig.schoolName}_${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            showToast('ดาวน์โหลดไฟล์สำรองฐานข้อมูล (.JSON) เรียบร้อยแล้ว');
+            showToast('ดาวน์โหลดไฟล์สำรองฐานข้อมูลครบทั้ง 6 ตาราง (.JSON) เรียบร้อยแล้ว');
+        }
+
+        // ==================== 2.8 ศูนย์จัดการตารางฐานข้อมูลทั้งหมด (DATABASE EXPLORER & SQL GENERATOR) ====================
+        function getFlattenedOrderItems() {
+            const list = [];
+            orders.forEach(o => {
+                (o.items || []).forEach(it => {
+                    list.push({
+                        itemId: `${o.id}_${it.size}`,
+                        orderId: o.id,
+                        customerName: o.name,
+                        group: o.group,
+                        size: it.size,
+                        qty: Number(it.qty || 0),
+                        unitPrice: Number(it.price || appConfig.shirtPrice),
+                        lineTotal: Number(it.qty || 0) * Number(it.price || appConfig.shirtPrice),
+                        paymentStatus: o.paymentStatus
+                    });
+                });
+            });
+            return list;
+        }
+
+        function getLineageSummaryTable() {
+            return (appConfig.lineageGroups || []).map((gName, idx) => {
+                const matched = orders.filter(o => o.group === gName);
+                let totalShirts = 0;
+                let totalDonation = 0;
+                matched.forEach(o => {
+                    totalDonation += Number(o.grandTotal || 0);
+                    (o.items || []).forEach(i => totalShirts += Number(i.qty || 0));
+                });
+                return {
+                    id: 'LIN' + String(idx + 1).padStart(2, '0'),
+                    name: gName,
+                    donorCount: matched.length,
+                    shirtCount: totalShirts,
+                    totalAmount: totalDonation
+                };
+            });
+        }
+
+        function openDatabaseExplorerModal() {
+            updateDbExplorerCounts();
+            switchDbTableTab(currentDbTab || 'orders');
+            openModal('dbExplorerModal');
+        }
+
+        function updateDbExplorerCounts() {
+            const items = getFlattenedOrderItems();
+            const lineages = getLineageSummaryTable();
+            const staff = getActiveStaffList();
+
+            const elOrders = document.getElementById('dbcount-orders');
+            const elItems = document.getElementById('dbcount-order_items');
+            const elSizes = document.getElementById('dbcount-sizes');
+            const elLin = document.getElementById('dbcount-lineages');
+            const elStaff = document.getElementById('dbcount-staff');
+            const elLogs = document.getElementById('dbcount-logs');
+
+            if (elOrders) elOrders.textContent = orders.length;
+            if (elItems) elItems.textContent = items.length;
+            if (elSizes) elSizes.textContent = (appConfig.sizes || []).length;
+            if (elLin) elLin.textContent = lineages.length;
+            if (elStaff) elStaff.textContent = staff.length;
+            if (elLogs) elLogs.textContent = auditLogs.length;
+        }
+
+        function switchDbTableTab(tabName) {
+            currentDbTab = tabName;
+            updateDbExplorerCounts();
+
+            ['orders', 'order_items', 'sizes', 'lineages', 'staff', 'settings'].forEach(t => {
+                const btn = document.getElementById(`dbtab-${t}`);
+                if (!btn) return;
+                if (t === tabName) {
+                    btn.className = "px-3 py-2 rounded-xl text-xs font-bold bg-sky-600 text-white transition flex items-center gap-1.5 shadow-2xs";
+                } else {
+                    btn.className = "px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-sky-700 transition flex items-center gap-1.5";
+                }
+            });
+
+            const container = document.getElementById('db-explorer-table-container');
+            if (!container) return;
+
+            if (tabName === 'orders') {
+                container.innerHTML = `
+                    <div class="mb-2 flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-700">ตารางที่ 1: <code>orders</code> (ข้อมูลใบสั่งจองเสื้อและผู้ร่วมบุญทั้งหมด ${orders.length} แถว)</span>
+                        <span class="text-slate-500">Primary Key: <code>id</code></span>
+                    </div>
+                    <table class="w-full text-xs text-left bg-white rounded-xl overflow-hidden border border-slate-200">
+                        <thead class="bg-slate-800 text-white">
+                            <tr>
+                                <th class="py-2.5 px-3">id (PK)</th>
+                                <th class="py-2.5 px-3">name</th>
+                                <th class="py-2.5 px-3">phone</th>
+                                <th class="py-2.5 px-3">group</th>
+                                <th class="py-2.5 px-3 text-right">shirtTotal</th>
+                                <th class="py-2.5 px-3 text-right">shippingCost</th>
+                                <th class="py-2.5 px-3 text-right">extraDonation</th>
+                                <th class="py-2.5 px-3 text-right">grandTotal</th>
+                                <th class="py-2.5 px-3">paymentStatus</th>
+                                <th class="py-2.5 px-3">shippingStatus</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${orders.map(o => `
+                                <tr class="hover:bg-sky-50/50">
+                                    <td class="py-2 px-3 font-mono font-bold text-sky-700">${o.id}</td>
+                                    <td class="py-2 px-3 font-semibold">${o.name}</td>
+                                    <td class="py-2 px-3 font-mono">${o.phone}</td>
+                                    <td class="py-2 px-3">${o.group}</td>
+                                    <td class="py-2 px-3 text-right">${Number(o.shirtTotal).toLocaleString()}</td>
+                                    <td class="py-2 px-3 text-right">${Number(o.shippingCost).toLocaleString()}</td>
+                                    <td class="py-2 px-3 text-right text-emerald-700">${Number(o.extraDonation).toLocaleString()}</td>
+                                    <td class="py-2 px-3 text-right font-bold">${Number(o.grandTotal).toLocaleString()}</td>
+                                    <td class="py-2 px-3">${o.paymentStatus}</td>
+                                    <td class="py-2 px-3">${o.shippingStatus}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else if (tabName === 'order_items') {
+                const items = getFlattenedOrderItems();
+                container.innerHTML = `
+                    <div class="mb-2 flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-700">ตารางที่ 2: <code>order_items</code> (ตารางย่อยแยกตามขนาดเสื้อ ${items.length} แถว สำหรับส่งโรงงาน)</span>
+                        <span class="text-slate-500">Foreign Key: <code>orderId -> orders.id</code></span>
+                    </div>
+                    <table class="w-full text-xs text-left bg-white rounded-xl overflow-hidden border border-slate-200">
+                        <thead class="bg-slate-800 text-white">
+                            <tr>
+                                <th class="py-2.5 px-3">itemId (PK)</th>
+                                <th class="py-2.5 px-3">orderId (FK)</th>
+                                <th class="py-2.5 px-3">customerName</th>
+                                <th class="py-2.5 px-3">size (FK)</th>
+                                <th class="py-2.5 px-3 text-center">qty</th>
+                                <th class="py-2.5 px-3 text-right">unitPrice</th>
+                                <th class="py-2.5 px-3 text-right">lineTotal</th>
+                                <th class="py-2.5 px-3">paymentStatus</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${items.map(it => `
+                                <tr class="hover:bg-sky-50/50">
+                                    <td class="py-2 px-3 font-mono font-bold text-indigo-700">${it.itemId}</td>
+                                    <td class="py-2 px-3 font-mono text-sky-700">${it.orderId}</td>
+                                    <td class="py-2 px-3">${it.customerName}</td>
+                                    <td class="py-2 px-3 font-bold">${it.size}</td>
+                                    <td class="py-2 px-3 text-center font-bold text-teal-700">${it.qty}</td>
+                                    <td class="py-2 px-3 text-right">${it.unitPrice.toLocaleString()}</td>
+                                    <td class="py-2 px-3 text-right font-bold">${it.lineTotal.toLocaleString()}</td>
+                                    <td class="py-2 px-3">${it.paymentStatus}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else if (tabName === 'sizes') {
+                container.innerHTML = `
+                    <div class="mb-2 flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-700">ตารางที่ 3: <code>sizes</code> (ตารางมาตรฐานขนาดเสื้อและราคา)</span>
+                        <span class="text-slate-500">Primary Key: <code>code</code></span>
+                    </div>
+                    <table class="w-full text-xs text-left bg-white rounded-xl overflow-hidden border border-slate-200">
+                        <thead class="bg-slate-800 text-white">
+                            <tr>
+                                <th class="py-2.5 px-3">code (PK)</th>
+                                <th class="py-2.5 px-3">chest_inch (รอบอก)</th>
+                                <th class="py-2.5 px-3">length_inch (ความยาว)</th>
+                                <th class="py-2.5 px-3">shirt_name</th>
+                                <th class="py-2.5 px-3 text-right">unit_price</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${(appConfig.sizes || []).map(s => `
+                                <tr class="hover:bg-sky-50/50">
+                                    <td class="py-2 px-3 font-mono font-bold text-sky-700">${s.code}</td>
+                                    <td class="py-2 px-3">${s.chest} นิ้ว</td>
+                                    <td class="py-2 px-3">${s.length} นิ้ว</td>
+                                    <td class="py-2 px-3">${appConfig.shirtName}</td>
+                                    <td class="py-2 px-3 text-right font-bold">${Number(appConfig.shirtPrice).toLocaleString()} บาท</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else if (tabName === 'lineages') {
+                const lineages = getLineageSummaryTable();
+                container.innerHTML = `
+                    <div class="mb-2 flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-700">ตารางที่ 4: <code>lineages</code> (ตารางสายบุญและยอดสะสมแยกตามสาย)</span>
+                        <span class="text-slate-500">Primary Key: <code>id</code></span>
+                    </div>
+                    <table class="w-full text-xs text-left bg-white rounded-xl overflow-hidden border border-slate-200">
+                        <thead class="bg-slate-800 text-white">
+                            <tr>
+                                <th class="py-2.5 px-3">id (PK)</th>
+                                <th class="py-2.5 px-3">lineage_name</th>
+                                <th class="py-2.5 px-3 text-center">donor_count (ผู้จอง)</th>
+                                <th class="py-2.5 px-3 text-center">total_shirts (จำนวนเสื้อ)</th>
+                                <th class="py-2.5 px-3 text-right">total_donation (ยอดเงินรวม)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${lineages.map(l => `
+                                <tr class="hover:bg-sky-50/50">
+                                    <td class="py-2 px-3 font-mono font-bold text-teal-700">${l.id}</td>
+                                    <td class="py-2 px-3 font-bold">${l.name}</td>
+                                    <td class="py-2 px-3 text-center">${l.donorCount} ท่าน</td>
+                                    <td class="py-2 px-3 text-center font-semibold">${l.shirtCount} ตัว</td>
+                                    <td class="py-2 px-3 text-right font-bold text-emerald-700">${l.totalAmount.toLocaleString()} บาท</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else if (tabName === 'staff') {
+                const staff = getActiveStaffList();
+                container.innerHTML = `
+                    <div class="mb-2 flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-700">ตารางที่ 5: <code>staff_accounts</code> (ตารางผู้ดูแลระบบและเจ้าหน้าที่หลังบ้าน)</span>
+                        <span class="text-slate-500">Primary Key: <code>username</code></span>
+                    </div>
+                    <table class="w-full text-xs text-left bg-white rounded-xl overflow-hidden border border-slate-200">
+                        <thead class="bg-slate-800 text-white">
+                            <tr>
+                                <th class="py-2.5 px-3">username (PK)</th>
+                                <th class="py-2.5 px-3">full_name</th>
+                                <th class="py-2.5 px-3">password_pin</th>
+                                <th class="py-2.5 px-3">role</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${staff.map(st => `
+                                <tr class="hover:bg-sky-50/50">
+                                    <td class="py-2 px-3 font-mono font-bold text-indigo-700">${st.username}</td>
+                                    <td class="py-2 px-3 font-semibold">${st.name}</td>
+                                    <td class="py-2 px-3 font-mono text-slate-500">${st.password}</td>
+                                    <td class="py-2 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${st.role === 'admin' ? 'bg-indigo-100 text-indigo-800' : 'bg-teal-100 text-teal-800'}">${st.role}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div>
+                            <div class="mb-2 font-bold text-xs text-slate-700">ตารางที่ 6.1: <code>school_settings</code> (ค่าพารามิเตอร์ระบบ)</div>
+                            <table class="w-full text-xs text-left bg-white rounded-xl overflow-hidden border border-slate-200">
+                                <thead class="bg-slate-800 text-white">
+                                    <tr><th class="py-2 px-3">setting_key (PK)</th><th class="py-2 px-3">setting_value</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr><td class="py-2 px-3 font-mono font-bold">schoolName</td><td class="py-2 px-3">${appConfig.schoolName}</td></tr>
+                                    <tr><td class="py-2 px-3 font-mono font-bold">eventDate</td><td class="py-2 px-3">${appConfig.eventDate}</td></tr>
+                                    <tr><td class="py-2 px-3 font-mono font-bold">shirtName</td><td class="py-2 px-3">${appConfig.shirtName}</td></tr>
+                                    <tr><td class="py-2 px-3 font-mono font-bold">shirtPrice</td><td class="py-2 px-3">${appConfig.shirtPrice} บาท</td></tr>
+                                    <tr><td class="py-2 px-3 font-mono font-bold">shippingFirst / Next</td><td class="py-2 px-3">${appConfig.shippingFirst} / +${appConfig.shippingNext} บาท</td></tr>
+                                    <tr><td class="py-2 px-3 font-mono font-bold">promptPayId</td><td class="py-2 px-3 font-mono">${appConfig.promptPayId}</td></tr>
+                                    <tr><td class="py-2 px-3 font-mono font-bold">bankAccount</td><td class="py-2 px-3">${appConfig.bankName} (${appConfig.bankNo})</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <div class="mb-2 font-bold text-xs text-slate-700">ตารางที่ 6.2: <code>audit_logs</code> (ประวัติการทำงานของฐานข้อมูล)</div>
+                            <table class="w-full text-xs text-left bg-white rounded-xl overflow-hidden border border-slate-200">
+                                <thead class="bg-slate-800 text-white">
+                                    <tr><th class="py-2 px-3">เวลา</th><th class="py-2 px-3">ผู้ทำรายการ</th><th class="py-2 px-3">รายละเอียด</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${auditLogs.slice(0, 10).map(l => `
+                                        <tr>
+                                            <td class="py-2 px-3 font-mono text-[10px] text-slate-500">${l.timestamp}</td>
+                                            <td class="py-2 px-3 font-semibold">${l.actor}</td>
+                                            <td class="py-2 px-3 text-slate-700">${l.detail}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        async function initializeAllDatabaseTables() {
+            saveToLocalStorage();
+            await forceSyncAllToCloud();
+            if (appConfig.googleSheetUrl) {
+                await syncAllToGoogleSheet();
+            }
+            switchDbTableTab(currentDbTab);
+        }
+
+        function exportSQLDump() {
+            const esc = (v) => String(v ?? '').replace(/'/g, "''");
+            const items = getFlattenedOrderItems();
+            const lineages = getLineageSummaryTable();
+            const staff = getActiveStaffList();
+
+            let sql = `-- ==========================================================\n`;
+            sql += `-- SQL DATABASE DUMP: ระบบสั่งจองเสื้อทำบุญผ้าป่า ${appConfig.schoolName}\n`;
+            sql += `-- สร้างเมื่อ: ${new Date().toLocaleString('th-TH')}\n`;
+            sql += `-- ประกอบด้วย 6 ตารางหลัก: school_settings, sizes, lineages, staff_accounts, orders, order_items\n`;
+            sql += `-- ==========================================================\n\n`;
+
+            sql += `CREATE TABLE IF NOT EXISTS school_settings (\n  setting_key VARCHAR(64) PRIMARY KEY,\n  setting_value TEXT\n);\n`;
+            sql += `INSERT INTO school_settings (setting_key, setting_value) VALUES\n`;
+            sql += `  ('schoolName', '${esc(appConfig.schoolName)}'),\n`;
+            sql += `  ('eventTitle', '${esc(appConfig.eventTitle)}'),\n`;
+            sql += `  ('eventDate', '${esc(appConfig.eventDate)}'),\n`;
+            sql += `  ('contactPhone', '${esc(appConfig.contactPhone)}'),\n`;
+            sql += `  ('shirtName', '${esc(appConfig.shirtName)}'),\n`;
+            sql += `  ('shirtPrice', '${Number(appConfig.shirtPrice)}'),\n`;
+            sql += `  ('shippingFirst', '${Number(appConfig.shippingFirst)}'),\n`;
+            sql += `  ('shippingNext', '${Number(appConfig.shippingNext)}'),\n`;
+            sql += `  ('promptPayId', '${esc(appConfig.promptPayId)}'),\n`;
+            sql += `  ('bankName', '${esc(appConfig.bankName)}'),\n`;
+            sql += `  ('bankNo', '${esc(appConfig.bankNo)}'),\n`;
+            sql += `  ('bankOwner', '${esc(appConfig.bankOwner)}');\n\n`;
+
+            sql += `CREATE TABLE IF NOT EXISTS sizes (\n  code VARCHAR(16) PRIMARY KEY,\n  chest_inch VARCHAR(16),\n  length_inch VARCHAR(16),\n  unit_price DECIMAL(10,2)\n);\n`;
+            if ((appConfig.sizes || []).length > 0) {
+                sql += `INSERT INTO sizes (code, chest_inch, length_inch, unit_price) VALUES\n`;
+                sql += appConfig.sizes.map(s => `  ('${esc(s.code)}', '${esc(s.chest)}', '${esc(s.length)}', ${Number(appConfig.shirtPrice)})`).join(',\n') + `;\n\n`;
+            }
+
+            sql += `CREATE TABLE IF NOT EXISTS lineages (\n  id VARCHAR(16) PRIMARY KEY,\n  lineage_name VARCHAR(255),\n  donor_count INT,\n  shirt_count INT,\n  total_amount DECIMAL(12,2)\n);\n`;
+            if (lineages.length > 0) {
+                sql += `INSERT INTO lineages (id, lineage_name, donor_count, shirt_count, total_amount) VALUES\n`;
+                sql += lineages.map(l => `  ('${esc(l.id)}', '${esc(l.name)}', ${l.donorCount}, ${l.shirtCount}, ${l.totalAmount})`).join(',\n') + `;\n\n`;
+            }
+
+            sql += `CREATE TABLE IF NOT EXISTS staff_accounts (\n  username VARCHAR(64) PRIMARY KEY,\n  full_name VARCHAR(255),\n  password_pin VARCHAR(64),\n  role VARCHAR(32)\n);\n`;
+            if (staff.length > 0) {
+                sql += `INSERT INTO staff_accounts (username, full_name, password_pin, role) VALUES\n`;
+                sql += staff.map(st => `  ('${esc(st.username)}', '${esc(st.name)}', '${esc(st.password)}', '${esc(st.role)}')`).join(',\n') + `;\n\n`;
+            }
+
+            sql += `CREATE TABLE IF NOT EXISTS orders (\n  id VARCHAR(32) PRIMARY KEY,\n  customer_name VARCHAR(255),\n  phone VARCHAR(64),\n  lineage_group VARCHAR(255),\n  delivery_type VARCHAR(32),\n  address TEXT,\n  shirt_total DECIMAL(10,2),\n  shipping_cost DECIMAL(10,2),\n  extra_donation DECIMAL(10,2),\n  grand_total DECIMAL(10,2),\n  transfer_date VARCHAR(32),\n  transfer_time VARCHAR(32),\n  payment_status VARCHAR(64),\n  shipping_status VARCHAR(64),\n  tracking_no VARCHAR(64)\n);\n`;
+            if (orders.length > 0) {
+                sql += `INSERT INTO orders VALUES\n`;
+                sql += orders.map(o => `  ('${esc(o.id)}', '${esc(o.name)}', '${esc(o.phone)}', '${esc(o.group)}', '${esc(o.deliveryType)}', '${esc(o.address)}', ${Number(o.shirtTotal)}, ${Number(o.shippingCost)}, ${Number(o.extraDonation)}, ${Number(o.grandTotal)}, '${esc(o.transferDate)}', '${esc(o.transferTime)}', '${esc(o.paymentStatus)}', '${esc(o.shippingStatus)}', '${esc(o.trackingNo)}')`).join(',\n') + `;\n\n`;
+            }
+
+            sql += `CREATE TABLE IF NOT EXISTS order_items (\n  item_id VARCHAR(64) PRIMARY KEY,\n  order_id VARCHAR(32),\n  customer_name VARCHAR(255),\n  size_code VARCHAR(16),\n  qty INT,\n  unit_price DECIMAL(10,2),\n  line_total DECIMAL(10,2),\n  FOREIGN KEY (order_id) REFERENCES orders(id)\n);\n`;
+            if (items.length > 0) {
+                sql += `INSERT INTO order_items VALUES\n`;
+                sql += items.map(it => `  ('${esc(it.itemId)}', '${esc(it.orderId)}', '${esc(it.customerName)}', '${esc(it.size)}', ${it.qty}, ${it.unitPrice}, ${it.lineTotal})`).join(',\n') + `;\n`;
+            }
+
+            const blob = new Blob([sql], { type: 'text/sql;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `database_schema_${appConfig.schoolName}.sql`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('ดาวน์โหลดไฟล์ฐานข้อมูล .SQL (ครบทั้ง 6 ตาราง) เรียบร้อยแล้ว');
         }
 
         function restoreDatabaseFromFile(input) {
@@ -2072,13 +2760,41 @@ function deleteOrderRow(sheet, orderId) {
             if (mode === 'qr') {
                 qrPanel.classList.remove('hidden');
                 bankPanel.classList.add('hidden');
-                btnQr.className = "px-2.5 py-1 rounded-md bg-sky-600 text-white transition";
-                btnBank.className = "px-2.5 py-1 rounded-md text-slate-600 hover:text-sky-600 transition";
+                if (btnQr) btnQr.className = "px-2.5 py-1 rounded-md bg-sky-600 text-white transition";
+                if (btnBank) btnBank.className = "px-2.5 py-1 rounded-md text-slate-600 hover:text-sky-600 transition";
             } else {
                 qrPanel.classList.add('hidden');
                 bankPanel.classList.remove('hidden');
-                btnBank.className = "px-2.5 py-1 rounded-md bg-sky-600 text-white transition";
-                btnQr.className = "px-2.5 py-1 rounded-md text-slate-600 hover:text-sky-600 transition";
+                if (btnBank) btnBank.className = "px-2.5 py-1 rounded-md bg-sky-600 text-white transition";
+                if (btnQr) btnQr.className = "px-2.5 py-1 rounded-md text-slate-600 hover:text-sky-600 transition";
+            }
+        }
+
+        function updatePaymentChannelsUI() {
+            const enableQr = appConfig.enableQrPayment !== false;
+            const enableBank = appConfig.enableBankPayment !== false;
+            const toggleGroup = document.getElementById('payment-method-toggle-group');
+            const btnQr = document.getElementById('paytab-qr');
+            const btnBank = document.getElementById('paytab-bank');
+            const titleEl = document.getElementById('payment-section-title');
+
+            if (enableQr && enableBank) {
+                if (toggleGroup) toggleGroup.classList.remove('hidden');
+                if (btnQr) btnQr.classList.remove('hidden');
+                if (btnBank) btnBank.classList.remove('hidden');
+                if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-qrcode text-sky-600"></i> เลือกช่องทางชำระเงิน`;
+                switchPaymentMethodTab('qr');
+            } else if (enableQr && !enableBank) {
+                if (toggleGroup) toggleGroup.classList.add('hidden');
+                if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-qrcode text-sky-600"></i> สแกน QR Code ชำระเงิน`;
+                switchPaymentMethodTab('qr');
+            } else if (!enableQr && enableBank) {
+                if (toggleGroup) toggleGroup.classList.add('hidden');
+                if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-building-columns text-sky-600"></i> โอนเงินเข้าบัญชีธนาคาร`;
+                switchPaymentMethodTab('bank');
+            } else {
+                if (toggleGroup) toggleGroup.classList.add('hidden');
+                switchPaymentMethodTab('qr');
             }
         }
 
@@ -2164,6 +2880,8 @@ function deleteOrderRow(sheet, orderId) {
             document.getElementById('bank-name-display').textContent = appConfig.bankName;
             document.getElementById('bank-acc-no').textContent = appConfig.bankNo;
             document.getElementById('bank-acc-name').textContent = appConfig.bankOwner;
+
+            updatePaymentChannelsUI();
 
             const groupSelect = document.getElementById('lineageGroup');
             groupSelect.innerHTML = (appConfig.lineageGroups || []).map(g => `<option value="${g}">${g}</option>`).join('');
@@ -2392,6 +3110,7 @@ function deleteOrderRow(sheet, orderId) {
             document.getElementById('transferDate').value = today;
 
             orders.push(newOrder);
+            recordAuditLog('CREATE_ORDER', `ผู้ร่วมบุญ "${newOrder.name}" สั่งจองเสื้อรหัส ${newOrder.id} ยอดรวม ${newOrder.grandTotal} บาท`, newOrder.name);
             saveToLocalStorage();
             updateHeroLiveStats();
             renderAdminDashboard();
@@ -2401,6 +3120,20 @@ function deleteOrderRow(sheet, orderId) {
                 try {
                     const orderRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', newOrder.id);
                     await setDoc(orderRef, newOrder);
+                    for (const item of (newOrder.items || [])) {
+                        const itemId = `${newOrder.id}_${item.size}`;
+                        const itemRef = doc(db, 'artifacts', appId, 'public', 'data', 'order_items', itemId);
+                        await setDoc(itemRef, {
+                            id: itemId,
+                            orderId: newOrder.id,
+                            customerName: newOrder.name,
+                            size: item.size,
+                            qty: Number(item.qty),
+                            unitPrice: Number(item.price),
+                            lineTotal: Number(item.qty) * Number(item.price),
+                            paymentStatus: newOrder.paymentStatus
+                        });
+                    }
                 } catch (e) {
                     console.error("Save order error:", e);
                 }
@@ -2880,8 +3613,13 @@ function deleteOrderRow(sheet, orderId) {
                 </div>
 
                 ${o.slipImage ? `
-                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center">
-                        <div class="text-[11px] font-bold text-slate-500 mb-2"><i class="fa-solid fa-image text-sky-600 mr-1"></i>รูปภาพสลิปโอนเงินจริงจากผู้สั่งจอง</div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-600"><i class="fa-solid fa-image text-sky-600 mr-1"></i>รูปภาพสลิปโอนเงินจริงจากผู้สั่งจอง</span>
+                            <a href="${o.slipImage}" download="Slip_${o.id}_${o.name}.jpg" class="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-[10px] font-bold transition inline-flex items-center gap-1">
+                                <i class="fa-solid fa-download"></i> ดาวน์โหลดรูปสลิป
+                            </a>
+                        </div>
                         <img src="${o.slipImage}" alt="Slip Image" class="max-h-72 mx-auto rounded-xl border border-slate-300 shadow-xs object-contain">
                     </div>
                 ` : `
@@ -3455,7 +4193,8 @@ function deleteOrderRow(sheet, orderId) {
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
                     draftConfigImages[key] = dataUrl;
                     refreshSettingsImagePreviews();
-                    showToast('อัปโหลดรูปภาพแล้ว กรุณากดปุ่ม "บันทึกการตั้งค่าทั้งหมด" เพื่อยืนยัน');
+                    saveSystemSettings(true);
+                    showToast('อัปโหลดและบันทึกรูปภาพอัตโนมัติเรียบร้อยแล้ว!');
                 };
                 img.src = evt.target.result;
             };
@@ -3465,6 +4204,7 @@ function deleteOrderRow(sheet, orderId) {
         function previewConfigUrlInput(key, urlValue) {
             draftConfigImages[key] = (urlValue || '').trim();
             refreshSettingsImagePreviews();
+            triggerSettingsAutoSave();
         }
 
         function clearConfigImage(key) {
@@ -3473,7 +4213,21 @@ function deleteOrderRow(sheet, orderId) {
             if (key === 'shirtImage') document.getElementById('cfg-shirtImageUrl').value = '';
             if (key === 'customQrImage') document.getElementById('cfg-customQrImageUrl').value = '';
             refreshSettingsImagePreviews();
-            showToast('ลบรูปภาพเรียบร้อย กรุณากด "บันทึกการตั้งค่าทั้งหมด" เพื่อยืนยัน');
+            saveSystemSettings(true);
+            showToast('ลบรูปภาพและบันทึกอัตโนมัติเรียบร้อยแล้ว');
+        }
+
+        let autoSaveTimer = null;
+        function triggerSettingsAutoSave() {
+            const indicator = document.getElementById('autosave-indicator');
+            if (indicator) {
+                indicator.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold";
+                indicator.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-amber-500"></i> กำลังบันทึกอัตโนมัติ...`;
+            }
+            if (autoSaveTimer) clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                saveSystemSettings(true);
+            }, 400);
         }
 
         function populateSettingsForm() {
@@ -3500,6 +4254,12 @@ function deleteOrderRow(sheet, orderId) {
 
             document.getElementById('cfg-shippingFirst').value = appConfig.shippingFirst;
             document.getElementById('cfg-shippingNext').value = appConfig.shippingNext;
+            if (document.getElementById('cfg-enableQrPayment')) {
+                document.getElementById('cfg-enableQrPayment').checked = appConfig.enableQrPayment !== false;
+            }
+            if (document.getElementById('cfg-enableBankPayment')) {
+                document.getElementById('cfg-enableBankPayment').checked = appConfig.enableBankPayment !== false;
+            }
             document.getElementById('cfg-promptPayId').value = appConfig.promptPayId || '';
             document.getElementById('cfg-bankName').value = appConfig.bankName;
             document.getElementById('cfg-bankNo').value = appConfig.bankNo;
@@ -3560,6 +4320,7 @@ function deleteOrderRow(sheet, orderId) {
             list.push({ name: "เจ้าหน้าที่ใหม่", username: `staff${list.length + 1}`, password: "1234", role: "staff" });
             appConfig.staffAccounts = list;
             renderSettingsStaffRows();
+            saveSystemSettings(true);
         }
 
         function removeStaffRowInSettings(idx) {
@@ -3572,6 +4333,7 @@ function deleteOrderRow(sheet, orderId) {
             list.splice(idx, 1);
             appConfig.staffAccounts = list;
             renderSettingsStaffRows();
+            saveSystemSettings(true);
         }
 
         function syncDOMSizeRowsToConfig() {
@@ -3609,6 +4371,7 @@ function deleteOrderRow(sheet, orderId) {
             syncDOMSizeRowsToConfig();
             appConfig.sizes.push({ code: "4XL", chest: "50", length: "32" });
             renderSettingsSizeRows();
+            saveSystemSettings(true);
         }
 
         function removeSizeRow(index) {
@@ -3619,9 +4382,15 @@ function deleteOrderRow(sheet, orderId) {
             }
             appConfig.sizes.splice(index, 1);
             renderSettingsSizeRows();
+            saveSystemSettings(true);
         }
 
-        async function saveSystemSettings() {
+        async function saveSystemSettings(isSilentAutoSave = false) {
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = null;
+            }
+
             const sizeRows = document.querySelectorAll('.cfg-size-row');
             const updatedSizes = [];
             sizeRows.forEach(row => {
@@ -3632,7 +4401,7 @@ function deleteOrderRow(sheet, orderId) {
             });
 
             if (updatedSizes.length === 0) {
-                showToast('กรุณาระบุขนาดเสื้ออย่างน้อย 1 ขนาด', 'error');
+                if (!isSilentAutoSave) showToast('กรุณาระบุขนาดเสื้ออย่างน้อย 1 ขนาด', 'error');
                 return;
             }
 
@@ -3656,6 +4425,19 @@ function deleteOrderRow(sheet, orderId) {
                 updatedStaff = getActiveStaffList();
             }
 
+            let enableQrPayment = document.getElementById('cfg-enableQrPayment') ? document.getElementById('cfg-enableQrPayment').checked : true;
+            let enableBankPayment = document.getElementById('cfg-enableBankPayment') ? document.getElementById('cfg-enableBankPayment').checked : true;
+
+            if (!enableQrPayment && !enableBankPayment) {
+                if (!isSilentAutoSave) {
+                    showToast('ต้องเปิดช่องทางชำระเงินอย่างน้อย 1 ช่องทาง ระบบเปิดสแกน QR ให้อัตโนมัติครับ', 'error');
+                }
+                enableQrPayment = true;
+                if (document.getElementById('cfg-enableQrPayment')) {
+                    document.getElementById('cfg-enableQrPayment').checked = true;
+                }
+            }
+
             appConfig = {
                 schoolName: document.getElementById('cfg-schoolName').value.trim() || DEFAULT_CONFIG.schoolName,
                 schoolLogo: draftConfigImages.schoolLogo || "",
@@ -3671,6 +4453,8 @@ function deleteOrderRow(sheet, orderId) {
                 sizes: updatedSizes,
                 shippingFirst: Math.max(0, Number(document.getElementById('cfg-shippingFirst').value) || 0),
                 shippingNext: Math.max(0, Number(document.getElementById('cfg-shippingNext').value) || 0),
+                enableQrPayment,
+                enableBankPayment,
                 promptPayId: document.getElementById('cfg-promptPayId').value.trim() || DEFAULT_CONFIG.promptPayId,
                 customQrImage: draftConfigImages.customQrImage || "",
                 bankName: document.getElementById('cfg-bankName').value.trim() || DEFAULT_CONFIG.bankName,
@@ -3687,10 +4471,25 @@ function deleteOrderRow(sheet, orderId) {
             // 1. บันทึกลงหน่วยความจำเครื่องทันที (ป้องกันข้อมูลหายเมื่อรีเฟรชหน้าเว็บ)
             saveToLocalStorage();
 
-            // 2. อัปเดตหน้าเว็บทั้งหมดทันที
-            applyConfigToUI(true);
+            // 2. อัปเดตหน้าเว็บทั้งหมดทันที (โดยไม่ล้างโฟกัสช่องที่กำลังพิมพ์อยู่หากเป็นการบันทึกอัตโนมัติ)
+            applyConfigToUI(!isSilentAutoSave);
 
-            // 3. บันทึกขึ้นฐานข้อมูล Cloud (ถ้าเชื่อมต่ออยู่)
+            const indicator = document.getElementById('autosave-indicator');
+            const nowTime = new Date().toLocaleTimeString('th-TH');
+            if (indicator) {
+                indicator.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold";
+                indicator.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i> บันทึกอัตโนมัติแล้ว (${nowTime})`;
+            }
+
+            if (!isSilentAutoSave) {
+                document.querySelectorAll('.btn-save-settings').forEach(btn => {
+                    const originalHtml = btn.innerHTML;
+                    btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> บันทึกสำเร็จเรียบร้อย!`;
+                    setTimeout(() => { btn.innerHTML = originalHtml; }, 1800);
+                });
+            }
+
+            // 3. บันทึกขึ้นฐานข้อมูล Cloud และ Google Sheet อัตโนมัติทันที
             if (db && currentUser) {
                 try {
                     updateCloudStatusIndicator('syncing', 'กำลังบันทึกการตั้งค่า...');
@@ -3703,7 +4502,14 @@ function deleteOrderRow(sheet, orderId) {
                 }
             }
 
-            showToast('บันทึกการตั้งค่าระบบเรียบร้อยแล้ว! ข้อมูลถูกจำไว้ถาวรแล้วครับ');
+            if (!isSilentAutoSave && appConfig.googleSheetUrl) {
+                postToGoogleSheet({ action: 'syncAll', orders, config: appConfig });
+            }
+
+            if (!isSilentAutoSave) {
+                recordAuditLog('SAVE_SETTINGS', `บันทึกการตั้งค่าระบบโรงเรียน (${appConfig.schoolName})`);
+                showToast('บันทึกการตั้งค่าทั้งหมดโดยอัตโนมัติเรียบร้อยแล้ว!');
+            }
         }
 
         async function resetDefaultSettings() {
@@ -3935,6 +4741,7 @@ function deleteOrderRow(sheet, orderId) {
             addSizeRow,
             removeSizeRow,
             saveSystemSettings,
+            triggerSettingsAutoSave,
             resetDefaultSettings,
             addStaffRowInSettings,
             removeStaffRowInSettings,
@@ -3962,6 +4769,10 @@ function deleteOrderRow(sheet, orderId) {
             togglePasswordVisibility,
             logoutAdmin,
             openDatabaseStatusModal,
+            openDatabaseExplorerModal,
+            switchDbTableTab,
+            initializeAllDatabaseTables,
+            exportSQLDump,
             forceSyncAllToCloud,
             downloadDatabaseBackup,
             restoreDatabaseFromFile,
